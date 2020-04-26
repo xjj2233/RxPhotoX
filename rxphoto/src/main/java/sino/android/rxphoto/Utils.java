@@ -17,6 +17,10 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.Objects;
 
+import okio.BufferedSink;
+import okio.BufferedSource;
+import okio.Okio;
+
 public final class Utils {
     private Utils() {
     }
@@ -66,7 +70,7 @@ public final class Utils {
      *
      * @param context
      * @param uri
-     * @return
+     * @return filepath
      * @throws IOException
      */
     public static String asFilePath(Context context, Uri uri) throws IOException {
@@ -81,11 +85,33 @@ public final class Utils {
     }
 
     private static void copy(InputStream is, OutputStream os) throws IOException {
-        byte[] buffer = new byte[4096];
+        byte[] buffer = new byte[1024];
         int byteCount = 0;
         while ((byteCount = is.read(buffer)) != -1) {
             os.write(buffer, 0, byteCount);
         }
+    }
+
+    /**
+     * Android 10，复制到应用沙盒
+     *
+     * @param context
+     * @param uri
+     * @return filepath
+     * @throws IOException
+     */
+    public static String asString(Context context, Uri uri) throws IOException {
+        Objects.requireNonNull(context);
+        InputStream inputStream = context.getContentResolver().openInputStream(uri);
+        Objects.requireNonNull(inputStream);
+        BufferedSource source = Okio.buffer(Okio.source(inputStream));
+        File file = Utils.createFile(context);
+        BufferedSink sink = Okio.buffer(Okio.sink(file));
+        sink.writeAll(source);
+        sink.flush();
+        sink.close();
+        source.close();
+        return file.getAbsolutePath();
     }
 
 }

@@ -14,6 +14,7 @@ import android.view.View;
 import android.widget.ImageView;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.core.content.FileProvider;
 
 import com.bumptech.glide.Glide;
@@ -49,6 +50,7 @@ public class MainActivity extends AppCompatActivity {
                         onCameraPermission();
                     }
                 });
+
     }
 
     private void onWritePermission() {
