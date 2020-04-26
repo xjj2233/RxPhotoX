@@ -23,12 +23,12 @@ public class RxPhotos {
         mFragmentLazy = getLazySingleton(fragment.getChildFragmentManager());
     }
 
-    public Observable<RxPhoto> request(final String authority) {
+    public Observable<RxPhoto> request(final String authority, final boolean isPublic) {
         return Observable.just(TRIGGER)
                 .flatMap(new Function<Object, ObservableSource<RxPhoto>>() {
                     @Override
                     public ObservableSource<RxPhoto> apply(Object o) throws Exception {
-                        mFragmentLazy.get().startPicture(authority);
+                        mFragmentLazy.get().startPicture(authority, isPublic);
                         return mFragmentLazy.get().getSubject();
 
                     }

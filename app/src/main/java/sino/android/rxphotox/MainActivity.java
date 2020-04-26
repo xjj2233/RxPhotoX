@@ -15,8 +15,11 @@ import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
+import android.widget.ImageView;
 
+import com.bumptech.glide.Glide;
 import com.tbruyelle.rxpermissions2.RxPermissions;
+import com.zhihu.matisse.engine.impl.GlideEngine;
 
 import java.io.File;
 import java.io.IOException;
@@ -156,7 +159,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void onPhoto() {
         new RxPhotos(this)
-                .request("sino.android.rxphotox.FileProvider")
+                .request("sino.android.rxphotox.FileProvider", false)
                 .subscribe(new SubObserver<RxPhoto>() {
                     @Override
                     public void onNext(RxPhoto rxPhoto) {
@@ -164,8 +167,22 @@ public class MainActivity extends AppCompatActivity {
                         // content://sino.android.rxphotox.FileProvider/external-path/Pictures/JPEG_20200426_151014.jpg
                         Log.d("rx", "onPhoto: path= " + rxPhoto.getPath());
                         Log.d("rx", "onPhoto: uri= " + rxPhoto.getUri());
+                        showImageView(rxPhoto.getPath());
+//                        showImageView(rxPhoto.getUri());
                     }
                 });
+    }
+
+    private void showImageView(String path) {
+        ImageView imageView = findViewById(R.id.image_view);
+        // java.io.FileNotFoundException: /storage/emulated/0/Pictures/JPEG_20200426_163953.jpg: open failed: ENOENT (No such file or directory)
+        // Caused by: android.system.ErrnoException: open failed: ENOENT (No such file or directory)
+        Glide.with(this).load(path).into(imageView);
+    }
+
+    private void showImageView(Uri uri) {
+        ImageView imageView = findViewById(R.id.image_view);
+        Glide.with(this).load(uri).into(imageView);
     }
 
 }

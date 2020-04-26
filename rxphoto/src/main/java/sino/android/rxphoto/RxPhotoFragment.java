@@ -59,17 +59,27 @@ public class RxPhotoFragment extends Fragment {
         mSubject.onComplete();
     }
 
-    public void startPicture(String authority) throws IOException {
+    public void startPicture(String authority, boolean isPublic) throws IOException {
         Objects.requireNonNull(getContext());
         Intent starter = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         if (starter.resolveActivity(getContext().getPackageManager()) != null) {
             Uri photoUri = null;
             File photoFile = null;
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                photoUri = createImageUri();
+            if (isPublic) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    photoUri = createImageUri();
+                } else {
+                    photoFile = createPublicImageFile();
+                    mPath = photoFile.getAbsolutePath();
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                        photoUri = FileProvider.getUriForFile(getContext(), authority, photoFile);
+                    } else {
+                        photoUri = Uri.fromFile(photoFile);
+                    }
+                }
             } else {
-                photoFile = createPublicImageFile();
+                photoFile = createImageFile();
                 mPath = photoFile.getAbsolutePath();
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                     photoUri = FileProvider.getUriForFile(getContext(), authority, photoFile);
@@ -78,8 +88,8 @@ public class RxPhotoFragment extends Fragment {
                 }
             }
 
-            mUri = photoUri;
             if (photoUri != null) {
+                mUri = photoUri;
                 starter.putExtra(MediaStore.EXTRA_OUTPUT, mUri);
                 starter.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
                 startActivityForResult(starter, REQUEST_CODE);
@@ -87,7 +97,7 @@ public class RxPhotoFragment extends Fragment {
         }
     }
 
-    private File createImageFile() throws IOException {
+    private File createImageFile() {
         Objects.requireNonNull(getContext());
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.CHINA);
         String timestamp = formatter.format(new Date());
