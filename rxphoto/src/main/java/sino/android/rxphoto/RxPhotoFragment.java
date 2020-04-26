@@ -69,7 +69,7 @@ public class RxPhotoFragment extends Fragment {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 photoUri = createImageUri();
             } else {
-                photoFile = createImageFile();
+                photoFile = createPublicImageFile();
                 mPath = photoFile.getAbsolutePath();
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                     photoUri = FileProvider.getUriForFile(getContext(), authority, photoFile);
@@ -91,9 +91,17 @@ public class RxPhotoFragment extends Fragment {
         Objects.requireNonNull(getContext());
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.CHINA);
         String timestamp = formatter.format(new Date());
-        String filename = String.format("JPEG_%s_", timestamp);
+        String filename = String.format("JPEG_%s.jpg", timestamp);
         File directory = getContext().getExternalFilesDir(Environment.DIRECTORY_PICTURES);
-        return File.createTempFile(filename, ".jpg", directory);
+        return new File(directory, filename);
+    }
+
+    private File createPublicImageFile() {
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.CHINA);
+        String timestamp = formatter.format(new Date());
+        String filename = String.format("JPEG_%s.jpg", timestamp);
+        File directory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
+        return new File(directory, filename);
     }
 
     private Uri createImageUri() {
@@ -104,6 +112,7 @@ public class RxPhotoFragment extends Fragment {
         if (Environment.MEDIA_MOUNTED.equals(state)) {
             return resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
         } else {
+            // java.lang.UnsupportedOperationException: Writing to internal storage is not supported.
             return resolver.insert(MediaStore.Images.Media.INTERNAL_CONTENT_URI, values);
         }
     }
