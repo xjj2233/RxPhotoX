@@ -1,13 +1,10 @@
 package sino.android.rxphoto;
 
 import android.app.Activity;
-import android.content.ContentResolver;
-import android.content.ContentValues;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
 import android.provider.MediaStore;
 
 import androidx.core.content.FileProvider;
@@ -15,9 +12,6 @@ import androidx.fragment.app.Fragment;
 
 import java.io.File;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
 import java.util.Objects;
 
 import io.reactivex.subjects.PublishSubject;
@@ -68,9 +62,9 @@ public class RxPhotoFragment extends Fragment {
 
             if (isPublic) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    photoUri = createImageUri();
+                    photoUri = Utils.createUri(getContext());
                 } else {
-                    photoFile = createPublicImageFile();
+                    photoFile = Utils.createPublicFile();
                     mPath = photoFile.getAbsolutePath();
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                         photoUri = FileProvider.getUriForFile(getContext(), authority, photoFile);
@@ -79,7 +73,7 @@ public class RxPhotoFragment extends Fragment {
                     }
                 }
             } else {
-                photoFile = createImageFile();
+                photoFile = Utils.createFile(getContext());
                 mPath = photoFile.getAbsolutePath();
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                     photoUri = FileProvider.getUriForFile(getContext(), authority, photoFile);
@@ -94,36 +88,6 @@ public class RxPhotoFragment extends Fragment {
                 starter.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
                 startActivityForResult(starter, REQUEST_CODE);
             }
-        }
-    }
-
-    private File createImageFile() {
-        Objects.requireNonNull(getContext());
-        SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.CHINA);
-        String timestamp = formatter.format(new Date());
-        String filename = String.format("JPEG_%s.jpg", timestamp);
-        File directory = getContext().getExternalFilesDir(Environment.DIRECTORY_PICTURES);
-        return new File(directory, filename);
-    }
-
-    private File createPublicImageFile() {
-        SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.CHINA);
-        String timestamp = formatter.format(new Date());
-        String filename = String.format("JPEG_%s.jpg", timestamp);
-        File directory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
-        return new File(directory, filename);
-    }
-
-    private Uri createImageUri() {
-        Objects.requireNonNull(getContext());
-        ContentResolver resolver = getContext().getContentResolver();
-        ContentValues values = new ContentValues();
-        String state = Environment.getExternalStorageState();
-        if (Environment.MEDIA_MOUNTED.equals(state)) {
-            return resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
-        } else {
-            // java.lang.UnsupportedOperationException: Writing to internal storage is not supported.
-            return resolver.insert(MediaStore.Images.Media.INTERNAL_CONTENT_URI, values);
         }
     }
 

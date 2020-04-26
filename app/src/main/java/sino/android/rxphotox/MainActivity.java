@@ -1,13 +1,9 @@
 package sino.android.rxphotox;
 
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.content.FileProvider;
-
 import android.Manifest;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
-import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -17,9 +13,12 @@ import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.FileProvider;
+
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.FutureTarget;
 import com.tbruyelle.rxpermissions2.RxPermissions;
-import com.zhihu.matisse.engine.impl.GlideEngine;
 
 import java.io.File;
 import java.io.IOException;
@@ -28,10 +27,13 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.Objects;
 
+import io.reactivex.Observable;
 import io.reactivex.Observer;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Function;
 import sino.android.rxphoto.RxPhoto;
 import sino.android.rxphoto.RxPhotos;
+import sino.android.rxphoto.Utils;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -144,7 +146,8 @@ public class MainActivity extends AppCompatActivity {
 
     private void onCameraPermission() {
         new RxPermissions(this)
-                .request(Manifest.permission.CAMERA)
+                .request(Manifest.permission.CAMERA,
+                        Manifest.permission.WRITE_EXTERNAL_STORAGE)
                 .subscribe(new SubObserver<Boolean>() {
                     @Override
                     public void onNext(Boolean aBoolean) {
@@ -159,7 +162,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void onPhoto() {
         new RxPhotos(this)
-                .request("sino.android.rxphotox.FileProvider", false)
+                .request("sino.android.rxphotox.FileProvider", true)
                 .subscribe(new SubObserver<RxPhoto>() {
                     @Override
                     public void onNext(RxPhoto rxPhoto) {
@@ -167,15 +170,32 @@ public class MainActivity extends AppCompatActivity {
                         // content://sino.android.rxphotox.FileProvider/external-path/Pictures/JPEG_20200426_151014.jpg
                         Log.d("rx", "onPhoto: path= " + rxPhoto.getPath());
                         Log.d("rx", "onPhoto: uri= " + rxPhoto.getUri());
-                        showImageView(rxPhoto.getPath());
-//                        showImageView(rxPhoto.getUri());
+//                        showImageView(rxPhoto.getPath());
+                        onCopy(rxPhoto.getUri());
+                    }
+                });
+    }
+
+    private void onCopy(Uri uri) {
+        Observable.just(uri)
+                .map(new Function<Uri, String>() {
+                    @Override
+                    public String apply(Uri uri) throws Exception {
+                        return Utils.asFilePath(MainActivity.this, uri);
+                    }
+                })
+                .compose(RxJavas.<String>scheduler())
+                .subscribe(new SubObserver<String>() {
+                    @Override
+                    public void onNext(String s) {
+                        showImageView(s);
                     }
                 });
     }
 
     private void showImageView(String path) {
+        Log.d("rx", "showImageView: path= " + path);
         ImageView imageView = findViewById(R.id.image_view);
-        // java.io.FileNotFoundException: /storage/emulated/0/Pictures/JPEG_20200426_163953.jpg: open failed: ENOENT (No such file or directory)
         // Caused by: android.system.ErrnoException: open failed: ENOENT (No such file or directory)
         Glide.with(this).load(path).into(imageView);
     }
@@ -183,6 +203,12 @@ public class MainActivity extends AppCompatActivity {
     private void showImageView(Uri uri) {
         ImageView imageView = findViewById(R.id.image_view);
         Glide.with(this).load(uri).into(imageView);
+
+//        FutureTarget<File> target = Glide.with(this)
+//                .asFile()
+//                .load("")
+//                .submit();
+//        File file = target.get();
     }
 
 }
