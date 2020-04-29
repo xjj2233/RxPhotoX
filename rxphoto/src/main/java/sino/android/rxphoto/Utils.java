@@ -4,6 +4,7 @@ import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Environment;
 import android.provider.MediaStore;
 
@@ -23,6 +24,11 @@ import okio.Okio;
 
 public final class Utils {
     private Utils() {
+    }
+
+    public static boolean isAndroidQ() {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
+                && !Environment.isExternalStorageLegacy();
     }
 
     public static boolean isExternalStorageWritable() {

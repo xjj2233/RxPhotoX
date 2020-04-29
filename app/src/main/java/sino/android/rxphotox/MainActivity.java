@@ -56,7 +56,7 @@ public class MainActivity extends AppCompatActivity {
     private void onWritePermission() {
         new RxPermissions(this)
                 .request(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                .subscribe(new Observer<Boolean>() {
+                .subscribe(new SubObserver<Boolean>() {
                     @Override
                     public void onNext(Boolean aBoolean) {
                         if (aBoolean) {
@@ -64,21 +64,6 @@ public class MainActivity extends AppCompatActivity {
                         } else {
                             Log.d("rx", "请允许权限: ");
                         }
-                    }
-
-                    @Override
-                    public void onSubscribe(Disposable d) {
-
-                    }
-
-                    @Override
-                    public void onError(Throwable e) {
-
-                    }
-
-                    @Override
-                    public void onComplete() {
-
                     }
                 });
     }
@@ -168,17 +153,12 @@ public class MainActivity extends AppCompatActivity {
                 .subscribe(new SubObserver<RxPhoto>() {
                     @Override
                     public void onNext(RxPhoto rxPhoto) {
-                        // /storage/emulated/0/Pictures/JPEG_20200426_151014.jpg
-                        // content://sino.android.rxphotox.FileProvider/external-path/Pictures/JPEG_20200426_151014.jpg
-                        Log.d("rx", "onPhoto: path= " + rxPhoto.getPath());
-                        Log.d("rx", "onPhoto: uri= " + rxPhoto.getUri());
-//                        showImageView(rxPhoto.getPath());
-                        onCopy(rxPhoto.getUri());
+                        showImageView(rxPhoto.getPath(), rxPhoto.getUri());
                     }
                 });
     }
 
-    private void onCopy(Uri uri) {
+    private void onCopy(final Uri uri) {
         Observable.just(uri)
                 .map(new Function<Uri, String>() {
                     @Override
@@ -190,22 +170,25 @@ public class MainActivity extends AppCompatActivity {
                 .subscribe(new SubObserver<String>() {
                     @Override
                     public void onNext(String s) {
-                        showImageView(s);
+                        showImageView(s, uri);
                     }
                 });
     }
 
-    private void showImageView(String path) {
+    private void showImageView(String path, Uri uri) {
+        // /storage/emulated/0/Pictures/JPEG_20200426_151014.jpg
+        // content://sino.android.rxphotox.FileProvider/external-path/Pictures/JPEG_20200426_151014.jpg
         Log.d("rx", "showImageView: path= " + path);
+        Log.d("rx", "showImageView: uri= " + uri);
         ImageView imageView = findViewById(R.id.image_view);
-        // Caused by: android.system.ErrnoException: open failed: ENOENT (No such file or directory)
-        Glide.with(this).load(path).into(imageView);
+        if (Utils.isAndroidQ()) {
+            Glide.with(this).load(uri).into(imageView);
+        } else {
+            Glide.with(this).load(path).into(imageView);
+        }
     }
 
     private void showImageView(Uri uri) {
-        ImageView imageView = findViewById(R.id.image_view);
-        Glide.with(this).load(uri).into(imageView);
-
 //        FutureTarget<File> target = Glide.with(this)
 //                .asFile()
 //                .load("")

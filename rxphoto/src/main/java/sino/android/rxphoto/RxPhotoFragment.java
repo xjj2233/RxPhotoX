@@ -5,14 +5,12 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
 import android.provider.MediaStore;
 
 import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Objects;
 
 import io.reactivex.subjects.PublishSubject;
@@ -54,27 +52,21 @@ public class RxPhotoFragment extends Fragment {
         mSubject.onComplete();
     }
 
-    public void startPicture(String authority, boolean isPublic) throws IOException {
+    public void startPicture(String authority, boolean isPublic) {
         Objects.requireNonNull(getContext());
         Intent starter = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-        if (starter.resolveActivity(getContext().getPackageManager()) != null) {
-            Uri photoUri = null;
-            File photoFile = null;
+        if (starter.resolveActivity(getContext().getPackageManager()) == null) {
+            return;
+        }
 
-            if (isPublic) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    photoUri = Utils.createUri(getContext());
-                } else {
-                    photoFile = Utils.createPublicFile();
-                    mPath = photoFile.getAbsolutePath();
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                        photoUri = FileProvider.getUriForFile(getContext(), authority, photoFile);
-                    } else {
-                        photoUri = Uri.fromFile(photoFile);
-                    }
-                }
+        Uri photoUri = null;
+        File photoFile = null;
+
+        if (isPublic) {
+            if (Utils.isAndroidQ()) {
+                photoUri = Utils.createUri(getContext());
             } else {
-                photoFile = Utils.createFile(getContext());
+                photoFile = Utils.createPublicFile();
                 mPath = photoFile.getAbsolutePath();
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                     photoUri = FileProvider.getUriForFile(getContext(), authority, photoFile);
@@ -82,13 +74,21 @@ public class RxPhotoFragment extends Fragment {
                     photoUri = Uri.fromFile(photoFile);
                 }
             }
-
-            if (photoUri != null) {
-                mUri = photoUri;
-                starter.putExtra(MediaStore.EXTRA_OUTPUT, mUri);
-                starter.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
-                startActivityForResult(starter, REQUEST_CODE);
+        } else {
+            photoFile = Utils.createFile(getContext());
+            mPath = photoFile.getAbsolutePath();
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                photoUri = FileProvider.getUriForFile(getContext(), authority, photoFile);
+            } else {
+                photoUri = Uri.fromFile(photoFile);
             }
+        }
+
+        if (photoUri != null) {
+            mUri = photoUri;
+            starter.putExtra(MediaStore.EXTRA_OUTPUT, mUri);
+            starter.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+            startActivityForResult(starter, REQUEST_CODE);
         }
     }
 
