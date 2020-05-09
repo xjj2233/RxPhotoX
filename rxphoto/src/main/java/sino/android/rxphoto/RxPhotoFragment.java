@@ -87,7 +87,6 @@ public class RxPhotoFragment extends Fragment {
         if (photoUri != null) {
             mUri = photoUri;
             starter.putExtra(MediaStore.EXTRA_OUTPUT, mUri);
-            starter.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
             startActivityForResult(starter, REQUEST_CODE);
         }
     }
